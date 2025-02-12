@@ -1,5 +1,7 @@
 # @summary Sets up a Kubernetes server instance
 #
+# @param admin_cert path to the admin cert
+# @param admin_key path to the admin key
 # @param aggregator_ca_cert path to the aggregator ca cert
 # @param aggregator_ca_key path to the aggregator ca key
 # @param api_port Cluster API port
@@ -16,6 +18,7 @@
 # @param etcd_servers list etcd servers if no puppetdb is used
 # @param firewall_type define the type of firewall to use
 # @param generate_ca initially generate ca
+# @param k8s_apiserver_cert path to the k8s apiserver cert
 # @param manage_certs whether to manage certs or not
 # @param manage_components whether to manage components or not
 # @param manage_crictl whether to install crictl or not
@@ -42,6 +45,10 @@ class k8s::server (
   Stdlib::Unixpath $ca_cert            = "${cert_path}/ca.pem",
   Stdlib::Unixpath $aggregator_ca_key  = "${cert_path}/aggregator-ca.key",
   Stdlib::Unixpath $aggregator_ca_cert = "${cert_path}/aggregator-ca.pem",
+
+  Stdlib::Unixpath $k8s_apiserver_cert = "${cert_path}/ca.pem", #probably duplicit
+  Stdlib::Unixpath $admin_cert         = "${cert_path}/admin.pem",
+  Stdlib::Unixpath $admin_key          = "${cert_path}/admin.key",
 
   Boolean $generate_ca              = false,
   Boolean $manage_etcd              = $k8s::manage_etcd,
@@ -125,9 +132,9 @@ class k8s::server (
     require         => File['/root/.kube'],
     current_context => 'default',
 
-    ca_cert         => $ca_cert,
-    client_cert     => "${cert_path}/admin.pem",
-    client_key      => "${cert_path}/admin.key",
+    ca_cert         => $k8s_apiserver_cert,
+    client_cert     => $admin_cert,
+    client_key      => $admin_key
   }
 
   if $node_on_server {
