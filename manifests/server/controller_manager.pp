@@ -4,6 +4,7 @@
 # @param arguments Additional arguments to pass to the controller manager.
 # @param ca_cert The path to the CA certificate.
 # @param ca_key The path to the CA key.
+# @param ca_sign_cert The path to the CA signing certificate.
 # @param cert The path to the controller manager certificate.
 # @param cert_path The path to the TLS certificates.
 # @param cluster_cidr The CIDR of the cluster.
@@ -24,14 +25,15 @@ class k8s::server::controller_manager (
   Hash[String, Data] $arguments = {},
 
   K8s::CIDR $service_cluster_cidr = $k8s::service_cluster_cidr,
-  K8s::CIDR $cluster_cidr         = $k8s::cluster_cidr,
+  K8s::CIDR $cluster_cidr         = $k8s::cluster_cidr, # TODO should be for pods?
 
-  Stdlib::Unixpath $cert_path = $k8s::server::tls::cert_path, #TODO remove dependency if amnaged certs
-  Stdlib::Unixpath $ca_cert   = $k8s::server::tls::ca_cert, #TODO remove dependency if amnaged certs
-  Stdlib::Unixpath $ca_key    = $k8s::server::tls::ca_key, #TODO remove dependency if amnaged certs
-  Stdlib::Unixpath $cert      = "${cert_path}/kube-controller-manager.pem", #TODO remove dependency if amnaged certs
-  Stdlib::Unixpath $key       = "${cert_path}/kube-controller-manager.key", #TODO remove dependency if amnaged certs
-  Stdlib::Unixpath $sa_key    = "${cert_path}/service-account.key", #TODO remove dependency if amnaged certs
+  Stdlib::Unixpath $cert_path    = $k8s::server::tls::cert_path, #TODO remove dependency if amnaged certs
+  Stdlib::Unixpath $ca_sign_cert = $k8s::server::tls::ca_cert, #TODO remove dependency if amnaged certs
+  Stdlib::Unixpath $ca_cert      = $k8s::server::tls::ca_cert, #TODO remove dependency if amnaged certs
+  Stdlib::Unixpath $ca_key       = $k8s::server::tls::ca_key, #TODO remove dependency if amnaged certs
+  Stdlib::Unixpath $cert         = "${cert_path}/kube-controller-manager.pem", #TODO remove dependency if amnaged certs
+  Stdlib::Unixpath $key          = "${cert_path}/kube-controller-manager.key", #TODO remove dependency if amnaged certs
+  Stdlib::Unixpath $sa_key       = "${cert_path}/service-account.key", #TODO remove dependency if amnaged certs
 
   String[1] $container_registry            = $k8s::container_registry,
   String[1] $container_image               = 'kube-controller-manager',
@@ -63,10 +65,10 @@ class k8s::server::controller_manager (
       ],
       cluster_cidr                     => $cluster_cidr,
       service_cluster_ip_range         => $service_cluster_cidr,
-      cluster_signing_cert_file        => $ca_cert, # self signed?
+      cluster_signing_cert_file        => $ca_sign_cert, # self signed?
       cluster_signing_key_file         => $ca_key,
       leader_elect                     => true,
-      root_ca_file                     => $ca_cert,
+      root_ca_file                     => $ca_cert, # TODO mozna ma byt ca_sign_cert?
       service_account_private_key_file => $sa_key,
   } + $_addn_args + $arguments)
 
