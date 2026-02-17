@@ -35,14 +35,23 @@ class k8s::repo (
         apt::source { 'libcontainers:stable:cri-o':
           ensure => absent,
         }
+
+        $keyring_path = '/etc/apt/keyrings/k8s-crio-apt-keyring.asc'
+	archive { $keyring_path:
+	  ensure => 'present',
+	  source => "${crio_url}/Release.key",
+	}
+        -> file { $keyring_path:
+          ensure => 'file',
+          mode   => '0644',
+          owner  => 'root',
+          group  => 'root',
+        }	
         apt::source { 'k8s-crio':
           location => $crio_url,
           repos    => '/',
           release  => '',
-          key      => {
-            name   => 'k8s-crio-apt-keyring.asc',
-            source => "${crio_url}/Release.key",
-          },
+	  keyring  => $keyring_path,
         }
         ~> exec { 'Fix conmon upgrade collision':
           command     => 'dpkg --no-triggers --force depends -r conmon',
