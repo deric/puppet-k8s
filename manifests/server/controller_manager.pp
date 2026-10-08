@@ -14,6 +14,7 @@
 # @param control_plane_url The URL of the Kubernetes API server.
 # @param ensure Whether the controller manager should be configured.
 # @param key The path to the controller manager key.
+# @param embed_certs Whether the kubeconfig embeds the cert/key bytes or references the files by path (path references are reloaded from disk by client-go on rotation).
 # @param service_cluster_cidr The CIDR of the service cluster.
 # @param serviceaccount_private path to the service account private key file
 #
@@ -33,6 +34,7 @@ class k8s::server::controller_manager (
   Stdlib::Unixpath $cert                   = "${cert_path}/kube-controller-manager.pem",
   Stdlib::Unixpath $key                    = "${cert_path}/kube-controller-manager.key",
   Stdlib::Unixpath $serviceaccount_private = "${cert_path}/service-account.key",
+  Boolean $embed_certs                     = $k8s::kubeconfig_embed_certs,
 
   Boolean $cluster_signing = true,
 
@@ -100,6 +102,8 @@ class k8s::server::controller_manager (
       ca_cert         => $ca_cert,
       client_cert     => $cert,
       client_key      => $key,
+      embed_certs     => $embed_certs,
+      notify          => Service['kube-controller-manager'],
     }
 
     file { "${k8s::sysconfig_path}/kube-controller-manager":
